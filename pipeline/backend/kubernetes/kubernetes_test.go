@@ -30,14 +30,14 @@ import (
 func TestGettingConfig(t *testing.T) {
 	engine := kube{
 		config: &config{
-			Namespace:            "default",
-			StorageClass:         "hdd",
-			VolumeSize:           "1G",
-			StorageRwx:           false,
-			PodLabels:            map[string]string{"l1": "v1"},
-			PodAnnotations:       map[string]string{"a1": "v1"},
-			ImagePullSecretNames: []string{"regcred"},
-			SecurityContext:      SecurityContextConfig{RunAsNonRoot: false},
+			Namespace:              "default",
+			StorageClass:           "hdd",
+			VolumeSize:             "1G",
+			StorageRwx:             false,
+			PodLabels:              map[string]string{"l1": "v1"},
+			PodAnnotations:         map[string]string{"a1": "v1"},
+			ImagePullSecretNames:   []string{"regcred"},
+			DefaultSecurityContext: SecurityContext{RunAsNonRoot: newBool(false)},
 		},
 	}
 	config := engine.getConfig()
@@ -47,7 +47,7 @@ func TestGettingConfig(t *testing.T) {
 	config.PodLabels = nil
 	config.PodAnnotations["a2"] = "v2"
 	config.ImagePullSecretNames = append(config.ImagePullSecretNames, "docker.io")
-	config.SecurityContext.RunAsNonRoot = true
+	config.EnforcedSecurityContext.RunAsNonRoot = newBool(true)
 
 	assert.Equal(t, "default", engine.config.Namespace)
 	assert.Equal(t, "hdd", engine.config.StorageClass)
@@ -56,7 +56,7 @@ func TestGettingConfig(t *testing.T) {
 	assert.Len(t, engine.config.PodLabels, 1)
 	assert.Len(t, engine.config.PodAnnotations, 1)
 	assert.Len(t, engine.config.ImagePullSecretNames, 1)
-	assert.False(t, engine.config.SecurityContext.RunAsNonRoot)
+	assert.False(t, *engine.config.EnforcedSecurityContext.RunAsNonRoot)
 }
 
 func TestSetupWorkflow(t *testing.T) {
@@ -68,14 +68,14 @@ func TestSetupWorkflow(t *testing.T) {
 
 	engine := kube{
 		config: &config{
-			Namespace:            namespace,
-			StorageClass:         "hdd",
-			VolumeSize:           "1G",
-			StorageRwx:           false,
-			PodLabels:            map[string]string{"l1": "v1"},
-			PodAnnotations:       map[string]string{"a1": "v1"},
-			ImagePullSecretNames: []string{"regcred"},
-			SecurityContext:      SecurityContextConfig{RunAsNonRoot: false},
+			Namespace:              namespace,
+			StorageClass:           "hdd",
+			VolumeSize:             "1G",
+			StorageRwx:             false,
+			PodLabels:              map[string]string{"l1": "v1"},
+			PodAnnotations:         map[string]string{"a1": "v1"},
+			ImagePullSecretNames:   []string{"regcred"},
+			DefaultSecurityContext: SecurityContext{RunAsNonRoot: newBool(false)},
 		},
 		client: fake.NewClientset(),
 	}

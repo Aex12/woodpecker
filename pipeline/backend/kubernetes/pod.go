@@ -68,8 +68,8 @@ func mkPod(step *types.Step, config *config, podName, goos string, options Backe
 	spec.Containers = append(spec.Containers, container)
 
 	initContainer := podInitContainer(&spec, &container)
-	if initContainer.Name != "" {
-		spec.InitContainers = append(spec.InitContainers, initContainer)
+	if initContainer != nil {
+		spec.InitContainers = append(spec.InitContainers, *initContainer)
 	}
 
 	pod := &kube_core_v1.Pod{
@@ -293,13 +293,13 @@ func podContainer(step *types.Step, podName, goos string, options BackendOptions
 // podInitContainer determines whether an init container is required to prepare the
 // main step container's working directory with the correct permissions.
 // If it is required, it returns the init container spec, otherwise it returns an empty container spec.
-func podInitContainer(podSpec *kube_core_v1.PodSpec, container *kube_core_v1.Container) kube_core_v1.Container {
+func podInitContainer(podSpec *kube_core_v1.PodSpec, container *kube_core_v1.Container) *kube_core_v1.Container {
 	// if pod is running as root, we don't need an init container to precreate the workingDir
 	// since kubelet already precreates it (as root:root)
 	if podSpec.SecurityContext == nil ||
 		podSpec.SecurityContext.RunAsUser == nil ||
 		*podSpec.SecurityContext.RunAsUser == 0 {
-		return kube_core_v1.Container{}
+		return nil
 	}
 
 	volumeMounts := []kube_core_v1.VolumeMount{}
@@ -314,10 +314,10 @@ func podInitContainer(podSpec *kube_core_v1.PodSpec, container *kube_core_v1.Con
 	}
 	// if workingDir is not covered by any volume mount, we don't need an init container to precreate it
 	if len(volumeMounts) == 0 {
-		return kube_core_v1.Container{}
+		return nil
 	}
 
-	return kube_core_v1.Container{
+	return &kube_core_v1.Container{
 		Name:            "init-" + container.Name,
 		Image:           initContainerImage,
 		ImagePullPolicy: kube_core_v1.PullAlways,
